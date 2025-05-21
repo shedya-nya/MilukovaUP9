@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Калькулятор стоимости ремонта</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="calculator">
+      <div class="header">РАССЧИТАЙТЕ СТОИМОСТЬ РЕМОНТА</div>
+      <div class="section">
+        <div class="section-title">Вид ремонта:</div>
+        <div class="options">
+          <div class="option">
+            <input
+              type="radio"
+              id="cosmetic"
+              name="repair-type"
+              value="3000"
+              checked
+            />
+            <label for="cosmetic">Косметический</label>
+          </div>
+          <div class="option">
+            <input type="radio" id="capital" name="repair-type" value="5000" />
+            <label for="capital">Капитальный</label>
+          </div>
+          <div class="option">
+            <input type="radio" id="turnkey" name="repair-type" value="7000" />
+            <label for="turnkey">Под ключ</label>
+          </div>
+          <div class="option">
+            <input type="radio" id="design" name="repair-type" value="10000" />
+            <label for="design">Дизайнерский</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Тип вашей недвижимости:</div>
+        <div class="options">
+          <div class="option">
+            <input
+              type="radio"
+              id="new-building"
+              name="property-type"
+              value="1"
+              checked
+            />
+            <label for="new-building">Новостройка</label>
+          </div>
+          <div class="option">
+            <input
+              type="radio"
+              id="secondary"
+              name="property-type"
+              value="1.2"
+            />
+            <label for="secondary">Вторичное жилье</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Количество комнат</div>
+        <div class="rooms">
+          <div class="room-option">
+            <input type="radio" id="room-1" name="rooms" value="1" checked />
+            <label for="room-1">1</label>
+          </div>
+          <div class="room-option">
+            <input type="radio" id="room-2" name="rooms" value="1.1" />
+            <label for="room-2">2</label>
+          </div>
+          <div class="room-option">
+            <input type="radio" id="room-3" name="rooms" value="1.2" />
+            <label for="room-3">3</label>
+          </div>
+          <div class="room-option">
+            <input type="radio" id="room-4" name="rooms" value="1.3" />
+            <label for="room-4">4</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Площадь, м²:</div>
+        <div class="range-slider">
+          <input
+            type="range"
+            id="area"
+            min="10"
+            max="500"
+            value="35"
+            step="1"
+            class="area-slider"
+          />
+          <div class="area-value">35</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <table class="discount-table">
+          <tr>
+            <th>Срок ремонта:</th>
+            <th>Скидка составит:</th>
+          </tr>
+          <tr>
+            <td>до 34 дней</td>
+            <td>23 765 руб</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="total">
+        <div>
+          <div class="section-title">Сумма</div>
+          <div class="total-amount">0 руб</div>
+        </div>
+        <div>
+          <button class="order-btn">Заказать</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      // Расчет стоимости
+      function calculateCost() {
+        // Получаем значения
+        const area = parseInt(document.getElementById("area").value);
+        const repairType = parseFloat(
+          document.querySelector('input[name="repair-type"]:checked').value
+        );
+        const propertyType = parseFloat(
+          document.querySelector('input[name="property-type"]:checked').value
+        );
+        const rooms = parseFloat(
+          document.querySelector('input[name="rooms"]:checked').value
+        );
+
+        // Базовый расчет
+        let basePrice = repairType * area;
+
+        // Модификаторы
+        basePrice *= propertyType; // Новостройка или вторичка
+        basePrice *= rooms; // Количество комнат
+
+        // Применяем скидку
+        let total = Math.max(basePrice - 23765, 0); // Гарантируем, что сумма не отрицательная
+
+        // Форматируем число с пробелами
+        document.querySelector(".total-amount").textContent =
+          total.toLocaleString("ru-RU") + " руб";
+      }
+
+      document.getElementById("area").addEventListener("input", function () {
+        const value = this.value;
+        const min = this.min;
+        const max = this.max;
+        const percent = ((value - min) / (max - min)) * 100;
+        this.style.setProperty("--fill-percent", percent + "%");
+        document.querySelector(".area-value").textContent = value + " м²";
+        calculateCost();
+      });
+
+      // Обновляем отображение площади
+      document.getElementById("area").addEventListener("input", function () {
+        document.querySelector(".area-value").textContent = this.value;
+        calculateCost();
+      });
+
+      // Пересчет при изменении параметров
+      document.querySelectorAll('input[type="radio"]').forEach((input) => {
+        input.addEventListener("change", calculateCost);
+      });
+
+      // Инициализация
+      calculateCost();
+    </script>
+  </body>
+</html>
