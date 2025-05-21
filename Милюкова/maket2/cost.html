@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Advanced Cost Calculator</title>
+  </head>
+  <body>
+    <form class="calculator" id="costCalc" novalidate>
+      <h1>Cost Calculator</h1>
+      <div>
+        <label
+          for="basePrice"
+          class="tooltip"
+          data-tip="Base price per unit/item"
+        >
+          Base Price ($)
+        </label>
+        <input
+          type="number"
+          id="basePrice"
+          name="basePrice"
+          min="0"
+          step="0.01"
+          value="100"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="quantity" class="tooltip" data-tip="Number of units/items">
+          Quantity
+        </label>
+        <input
+          type="number"
+          id="quantity"
+          name="quantity"
+          min="1"
+          step="1"
+          value="1"
+          required
+        />
+      </div>
+
+      <div>
+        <label
+          for="taxRate"
+          class="tooltip"
+          data-tip="Applicable tax percentage"
+        >
+          Tax Rate (%)
+        </label>
+        <input
+          type="number"
+          id="taxRate"
+          name="taxRate"
+          min="0"
+          max="100"
+          step="0.01"
+          value="8.25"
+        />
+      </div>
+
+      <div>
+        <label
+          for="discountType"
+          class="tooltip"
+          data-tip="Select discount type"
+        >
+          Discount Type
+        </label>
+        <select id="discountType" name="discountType">
+          <option value="none">None</option>
+          <option value="percentage">Percentage</option>
+          <option value="fixed">Fixed Amount</option>
+        </select>
+      </div>
+
+      <div>
+        <label
+          for="discountValue"
+          class="tooltip"
+          data-tip="Value of discount based on selected type"
+        >
+          Discount Value
+        </label>
+        <input
+          type="number"
+          id="discountValue"
+          name="discountValue"
+          min="0"
+          step="0.01"
+          value="0"
+          disabled
+        />
+      </div>
+
+      <fieldset>
+        <legend
+          class="tooltip"
+          data-tip="Additional optional features/services"
+        >
+          Additional Features/Services
+        </legend>
+        <div class="checkbox-group" id="featuresGroup">
+          <label
+            ><input
+              type="checkbox"
+              name="features"
+              value="25"
+              data-desc="Extended warranty (+$25)"
+            />
+            Extended Warranty (+$25)</label
+          >
+          <label
+            ><input
+              type="checkbox"
+              name="features"
+              value="15"
+              data-desc="Priority Support (+$15)"
+            />
+            Priority Support (+$15)</label
+          >
+          <label
+            ><input
+              type="checkbox"
+              name="features"
+              value="40"
+              data-desc="Installation Service (+$40)"
+            />
+            Installation Service (+$40)</label
+          >
+          <label
+            ><input
+              type="checkbox"
+              name="features"
+              value="60"
+              data-desc="Customization (+$60)"
+            />
+            Customization (+$60)</label
+          >
+        </div>
+      </fieldset>
+
+      <div class="grid-two" style="gap: 1rem">
+        <div>
+          <label
+            for="shippingMethod"
+            class="tooltip"
+            data-tip="Select shipping method"
+          >
+            Shipping Method
+          </label>
+          <select id="shippingMethod" name="shippingMethod">
+            <option value="0" data-cost="0">Standard (Free)</option>
+            <option value="10" data-cost="10">Express (+$10)</option>
+            <option value="25" data-cost="25">Overnight (+$25)</option>
+          </select>
+        </div>
+
+        <div>
+          <label
+            for="shippingDistance"
+            class="tooltip"
+            data-tip="Distance for shipping in miles"
+          >
+            Shipping Distance (miles)
+          </label>
+          <input
+            type="number"
+            id="shippingDistance"
+            name="shippingDistance"
+            min="0"
+            step="1"
+            value="0"
+          />
+        </div>
+      </div>
+
+      <button type="submit">Calculate Total Cost</button>
+
+      <output class="results" id="result" aria-live="polite" aria-atomic="true"
+        >Total Cost: $0.00</output
+      >
+    </form>
+    <script>
+      (() => {
+        const form = document.getElementById("costCalc");
+        const discountType = form.discountType;
+        const discountValue = form.discountValue;
+        const result = document.getElementById("result");
+
+        // Enable/disable discount value input based on discount type
+        discountType.addEventListener("change", () => {
+          if (discountType.value === "none") {
+            discountValue.value = 0;
+            discountValue.disabled = true;
+          } else {
+            discountValue.disabled = false;
+            discountValue.min = "0";
+            discountValue.step =
+              discountType.value === "percentage" ? "0.01" : "0.01";
+          }
+        });
+
+        // Helper: format number as currency
+        const fmtCurrency = (num) =>
+          num.toLocaleString("en-US", {
+            style: "currency",
+            currency: "USD",
+            minimumFractionDigits: 2,
+          });
+
+        // Calculate shipping cost based on distance with tiered pricing
+        function calculateDistanceCost(distance) {
+          if (distance <= 0) return 0;
+          if (distance <= 50) return distance * 0.5; // $0.50 per mile for first 50 miles
+          if (distance <= 150) return 50 * 0.5 + (distance - 50) * 0.3; // $0.30 per mile next 100 miles
+          return 50 * 0.5 + 100 * 0.3 + (distance - 150) * 0.1; // $0.10 per mile beyond 150 miles
+        }
+
+        // Main calculation
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+
+          const basePrice = parseFloat(form.basePrice.value);
+          const quantity = parseInt(form.quantity.value, 10);
+          const taxRate = parseFloat(form.taxRate.value) / 100;
+          const discountTypeVal = discountType.value;
+          let discountVal = parseFloat(discountValue.value) || 0;
+
+          if (basePrice < 0 || quantity < 1 || taxRate < 0 || discountVal < 0) {
+            result.textContent = "Please enter valid positive values.";
+            return;
+          }
+
+          // Calculate subtotal before discounts and taxes
+          let subtotal = basePrice * quantity;
+
+          // Additional features sum
+          const features = [...form.features].filter((f) => f.checked);
+          const featuresCost = features.reduce(
+            (acc, f) => acc + parseFloat(f.value),
+            0
+          );
+
+          subtotal += featuresCost;
+
+          // Calculate discount
+          let discountAmount = 0;
+          if (discountTypeVal === "percentage") {
+            if (discountVal > 100) discountVal = 100;
+            discountAmount = subtotal * (discountVal / 100);
+          } else if (discountTypeVal === "fixed") {
+            if (discountVal > subtotal) discountVal = subtotal;
+            discountAmount = discountVal;
+          }
+          // Subtotal after discount (no negative)
+          const afterDiscount = Math.max(subtotal - discountAmount, 0);
+
+          // Calculate tax on after discount
+          const taxAmount = afterDiscount * taxRate;
+
+          // Shipping base cost + distance cost
+          const shippingBaseCost = parseFloat(form.shippingMethod.value);
+          const shippingDistance =
+            parseInt(form.shippingDistance.value, 10) || 0;
+          const shippingDistanceCost = calculateDistanceCost(shippingDistance);
+
+          const shippingTotal = shippingBaseCost + shippingDistanceCost;
+
+          // Final total
+          const totalCost = afterDiscount + taxAmount + shippingTotal;
+
+          // Detailed breakdown accessible
+          result.innerHTML = `
+      <strong>Total Cost: ${fmtCurrency(totalCost)}</strong><br/>
+      <small>
+        (Subtotal: <b>${fmtCurrency(subtotal)}</b><br/>
+        - Discount: <b>${fmtCurrency(discountAmount)}</b><br/>
+        + Tax (${(taxRate * 100).toFixed(2)}%): <b>${fmtCurrency(taxAmount)}</b><br/>
+        + Shipping: <b>${fmtCurrency(shippingTotal)}</b>)
+      </small>
+    `;
+        });
+      })();
+    </script>
+  </body>
+</html>

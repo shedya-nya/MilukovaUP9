@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="styles.css">
+<title>Loan Calculator</title>
+</head>
+<body>
+  <main class="calculator" role="main" aria-label="Loan Calculator">
+    <h1>Loan Calculator</h1>
+    <form id="loanForm" novalidate>
+      <div class="form-group">
+        <label for="loanAmount">
+          Loan Amount
+          <span class="tooltip" aria-label="The principal amount you want to borrow">
+            <span class="tooltip-icon" aria-hidden="true">?</span>
+            <span class="tooltip-text" role="tooltip">The principal amount you want to borrow</span>
+          </span>
+        </label>
+        <div class="input-wrapper">
+          <input type="number" id="loanAmount" name="loanAmount" min="0" step="0.01" placeholder="e.g. 10000" required aria-required="true" aria-describedby="loanAmountHelp" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="interestRate">
+          Annual Interest Rate (%)
+          <span class="tooltip" aria-label="The yearly interest rate (percentage)">
+            <span class="tooltip-icon" aria-hidden="true">?</span>
+            <span class="tooltip-text" role="tooltip">The yearly interest rate (percentage)</span>
+          </span>
+        </label>
+        <div class="input-wrapper">
+          <input type="number" id="interestRate" name="interestRate" min="0" step="0.01" placeholder="e.g. 5" required aria-required="true" aria-describedby="interestRateHelp" />
+        </div>
+      </div>
+
+      <div class="form-group grid-2">
+        <div>
+          <label for="loanTerm">
+            Loan Term
+            <span class="tooltip" aria-label="Duration of the loan">
+              <span class="tooltip-icon" aria-hidden="true">?</span>
+              <span class="tooltip-text" role="tooltip">Duration of the loan</span>
+            </span>
+          </label>
+          <div class="input-wrapper">
+            <input type="number" id="loanTerm" name="loanTerm" min="0" step="1" placeholder="e.g. 5" required aria-required="true" aria-describedby="loanTermHelp" />
+          </div>
+        </div>
+        <div>
+          <label for="termType">
+            Term Type
+            <span class="tooltip" aria-label="Select years or months">
+              <span class="tooltip-icon" aria-hidden="true">?</span>
+              <span class="tooltip-text" role="tooltip">Select years or months</span>
+            </span>
+          </label>
+          <div class="input-wrapper">
+            <select id="termType" name="termType" required aria-required="true">
+              <option value="years" selected>Years</option>
+              <option value="months">Months</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" aria-label="Calculate loan payments">Calculate</button>
+    </form>
+
+    <section class="results" aria-live="polite" aria-atomic="true" hidden id="resultsSection">
+      <p class="total-label">Monthly Payment</p>
+      <p class="total-amount" id="monthlyPayment"></p>
+
+      <div class="breakdown" id="breakdownDetails" aria-label="Breakdown of loan payments">
+        <p><strong>Total Payment:</strong> <span id="totalPayment"></span></p>
+        <p><strong>Total Interest:</strong> <span id="totalInterest"></span></p>
+      </div>
+    </section>
+  </main>
+
+<script>
+  // Format number as currency
+  function formatCurrency(num) {
+    return num.toLocaleString(undefined, {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  // Calculate loan payments and update UI
+  function calculateLoan(e) {
+    e.preventDefault();
+
+    const amountInput = document.getElementById("loanAmount");
+    const interestInput = document.getElementById("interestRate");
+    const termInput = document.getElementById("loanTerm");
+    const termTypeSelect = document.getElementById("termType");
+    const resultsSection = document.getElementById("resultsSection");
+    const monthlyPaymentEl = document.getElementById("monthlyPayment");
+    const totalPaymentEl = document.getElementById("totalPayment");
+    const totalInterestEl = document.getElementById("totalInterest");
+
+    // Parse inputs
+    const principal = parseFloat(amountInput.value);
+    const annualInterestRate = parseFloat(interestInput.value);
+    const term = parseInt(termInput.value);
+    const termType = termTypeSelect.value;
+
+    // Validate inputs
+    if (
+      isNaN(principal) || principal <= 0 ||
+      isNaN(annualInterestRate) || annualInterestRate < 0 ||
+      isNaN(term) || term <= 0
+    ) {
+      resultsSection.hidden = true;
+      return;
+    }
+
+    // Convert term to months if necessary
+    const months = termType === "years" ? term * 12 : term;
+
+    // Monthly interest rate
+    const monthlyRate = annualInterestRate / 100 / 12;
+
+    let monthlyPayment;
+    if (monthlyRate === 0) {
+      // No interest loan
+      monthlyPayment = principal / months;
+    } else {
+      // Formula: M = P * r * (1+r)^n / ((1+r)^n - 1)
+      const ratePow = Math.pow(1 + monthlyRate, months);
+      monthlyPayment = principal * monthlyRate * ratePow / (ratePow - 1);
+    }
+
+    const totalPayment = monthlyPayment * months;
+    const totalInterest = totalPayment - principal;
+
+    // Update UI
+    monthlyPaymentEl.textContent = formatCurrency(monthlyPayment);
+    totalPaymentEl.textContent = formatCurrency(totalPayment);
+    totalInterestEl.textContent = formatCurrency(totalInterest);
+
+    resultsSection.hidden = false;
+  }
+
+  // Event listener for form submission
+  document.getElementById("loanForm").addEventListener("submit", calculateLoan);
+</script>
+</body>
+</html>
